@@ -7,6 +7,7 @@ import type { Invoice } from '@billora/shared';
 import { EmptyState } from '../../../components/empty-state';
 import { Message } from '../../../components/message';
 import { ProtectedPage } from '../../../components/protected-page';
+import { StatusBadge } from '../../../components/status-badge';
 import { api } from '../../../lib/api';
 import { getErrorMessage } from '../../../lib/errors';
 import { formatMoney } from '../../../lib/format';
@@ -79,7 +80,7 @@ export default function InvoiceDetail() {
           <>
             <div className="card invoice-header">
               <div>
-                <p className="eyebrow">{invoice.status.replace('_', ' ')}</p>
+                <StatusBadge status={invoice.status} />
                 <h1>{invoice.invoiceNumber}</h1>
                 <p>{invoice.customer?.name || 'Customer'} · Due {invoice.dueDate.slice(0, 10)}</p>
               </div>
@@ -114,8 +115,8 @@ export default function InvoiceDetail() {
                 </div>
                 {invoice.notes && <p>{invoice.notes}</p>}
                 <div className="actions">
-                  <button className="secondary" type="button" onClick={() => void action(() => api.sendInvoice(invoice.id), 'Invoice marked as sent.')} disabled={busy}>Send</button>
-                  <button type="button" onClick={() => void action(() => api.markInvoicePaid(invoice.id), 'Invoice marked paid.')} disabled={busy}>Mark paid</button>
+                  <button className="secondary" type="button" onClick={() => void action(() => api.sendInvoice(invoice.id), 'Invoice marked as sent.')} disabled={busy || invoice.status !== 'DRAFT'}>Send</button>
+                  <button type="button" onClick={() => void action(() => api.markInvoicePaid(invoice.id), 'Invoice marked paid.')} disabled={busy || invoice.status === 'PAID'}>Mark paid</button>
                 </div>
               </div>
             </div>

@@ -6,6 +6,7 @@ import type { Business, Customer, Invoice } from '@billora/shared';
 import { EmptyState } from '../../components/empty-state';
 import { Message } from '../../components/message';
 import { ProtectedPage } from '../../components/protected-page';
+import { StatusBadge } from '../../components/status-badge';
 import { api, InvoiceInputItem } from '../../lib/api';
 import { confirmAction, getErrorMessage } from '../../lib/errors';
 import { formatMoney, inDays, today } from '../../lib/format';
@@ -41,11 +42,15 @@ export default function Invoices() {
 
   async function load() {
     const [businessData, customerData, invoiceData] = await Promise.all([api.businesses(), api.customers(), api.invoices()]);
+    const selectedBusinessId = businessId || businessData[0]?.id || '';
+    const selectedCustomerId = customerData.find((customer) => customer.id === customerId && customer.businessId === selectedBusinessId)?.id
+      || customerData.find((customer) => customer.businessId === selectedBusinessId)?.id
+      || '';
     setBusinesses(businessData);
     setCustomers(customerData);
     setInvoices(invoiceData);
-    if (!businessId && businessData[0]) setBusinessId(businessData[0].id);
-    if (!customerId && customerData[0]) setCustomerId(customerData[0].id);
+    setBusinessId(selectedBusinessId);
+    setCustomerId(selectedCustomerId);
   }
 
   useEffect(() => {
@@ -198,6 +203,14 @@ export default function Invoices() {
     void invoiceAction(() => api.deleteInvoice(invoice.id), 'Invoice deleted.', invoice.id);
   }
 
+  function paidTotal(invoice: Invoice) {
+    return invoice.payments?.filter((payment) => payment.status === 'SUCCESS').reduce((sum, payment) => sum + Number(payment.amount), 0) ?? 0;
+  }
+
+  function outstandingTotal(invoice: Invoice) {
+    return Math.max(Number(invoice.totalAmount) - paidTotal(invoice), 0);
+  }
+
   return (
     <ProtectedPage>
       <section className="stack">
@@ -286,14 +299,14 @@ export default function Invoices() {
                   </>
                 ) : (
                   <>
-                    <span><strong><Link href={`/invoices/${invoice.id}`}>{invoice.invoiceNumber}</Link></strong><small>{invoice.customer?.name || 'Customer'} · {invoice.status.replace('_', ' ')}</small></span>
-                    <span>{formatMoney(invoice.totalAmount)}</span>
+                    <span><strong><Link href={`/invoices/${invoice.id}`}>{invoice.invoiceNumber}</Link></strong><small>{invoice.customer?.name || 'Customer'} · <StatusBadge status={invoice.status} /></small></span>
+                    <span><strong>{formatMoney(invoice.totalAmount)}</strong><small>Due {formatMoney(outstandingTotal(invoice))}</small></span>
                     <span className="actions small">
                       <input aria-label="Payment amount" className="small-input" type="number" min="0.01" step="0.01" placeholder="Amount" value={paymentAmounts[invoice.id] ?? ''} onChange={(event) => setPaymentAmounts({ ...paymentAmounts, [invoice.id]: event.target.value })} />
                       <input aria-label="Payment reference" className="small-input" placeholder="Reference" value={paymentReferences[invoice.id] ?? ''} onChange={(event) => setPaymentReferences({ ...paymentReferences, [invoice.id]: event.target.value })} />
                       <button className="secondary" type="button" onClick={() => startEdit(invoice)} disabled={Boolean(busyId)}>Edit</button>
-                      <button className="secondary" type="button" onClick={() => void invoiceAction(() => api.sendInvoice(invoice.id), 'Invoice marked as sent.', invoice.id)} disabled={busyId === invoice.id}>Send</button>
-                      <button type="button" onClick={() => void recordPayment(invoice)} disabled={busyId === invoice.id}>{busyId === invoice.id ? 'Working...' : 'Pay'}</button>
+                      <button className="secondary" type="button" onClick={() => void invoiceAction(() => api.sendInvoice(invoice.id), 'Invoice marked as sent.', invoice.id)} disabled={busyId === invoice.id || invoice.status !== 'DRAFT'}>Send</button>
+                      <button type="button" onClick={() => void recordPayment(invoice)} disabled={busyId === invoice.id || outstandingTotal(invoice) <= 0}>{busyId === invoice.id ? 'Working...' : 'Pay'}</button>
                       <button className="danger secondary" type="button" onClick={() => deleteInvoice(invoice)} disabled={busyId === invoice.id}>Delete</button>
                     </span>
                   </>

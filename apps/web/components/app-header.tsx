@@ -12,12 +12,12 @@ export function AppHeader() {
 
   function handleLogout() {
     logout();
-    router.push('/login');
+    router.replace('/login');
   }
 
   return (
     <header>
-      <Link href="/" className="brand">Billora</Link>
+      <Link href="/" className="brand"><span className="brand-mark">B</span>Billora</Link>
       <nav>
         {user ? (
           <>

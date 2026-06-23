@@ -7,3 +7,8 @@ export function confirmAction(message: string) {
   if (typeof window === 'undefined') return false;
   return window.confirm(message);
 }
+
+export function getSafeRedirectPath(path: string | null, fallback = '/dashboard') {
+  if (!path || !path.startsWith('/') || path.startsWith('//')) return fallback;
+  return path;
+}

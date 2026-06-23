@@ -11,7 +11,7 @@ export function ProtectedPage({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    if (!loading && !user) router.replace(`/login?next=${encodeURIComponent(pathname || '/dashboard')}`);
   }, [loading, pathname, router, user]);
 
   if (loading) {

@@ -49,7 +49,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
   if (!response.ok) {
     const message = Array.isArray(data?.message) ? data.message.join(', ') : data?.message;
-    if (response.status === 401) {
+    if (response.status === 401 && typeof window !== 'undefined') {
       clearToken();
       window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
     }

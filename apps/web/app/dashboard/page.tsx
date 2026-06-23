@@ -5,6 +5,7 @@ import type { Business, Customer, Invoice } from '@billora/shared';
 import { EmptyState } from '../../components/empty-state';
 import { Message } from '../../components/message';
 import { ProtectedPage } from '../../components/protected-page';
+import { StatusBadge } from '../../components/status-badge';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { getErrorMessage } from '../../lib/errors';
@@ -46,7 +47,7 @@ export default function Dashboard() {
         <div className="card">
           <p className="eyebrow">Welcome back</p>
           <h1>{user?.fullName || 'Billora user'}</h1>
-          <p>Your invoicing workspace is connected to the live API.</p>
+          <p>Clear invoices, confident payments, and a cleaner view of every customer balance.</p>
           <Message error={error} />
         </div>
         <div className="grid four">
@@ -62,7 +63,7 @@ export default function Dashboard() {
             {invoices.slice(0, 5).map((invoice) => (
               <div className="table-row" key={invoice.id}>
                 <span>{invoice.invoiceNumber}</span>
-                <span>{invoice.status.replace('_', ' ')}</span>
+                <StatusBadge status={invoice.status} />
                 <strong>{formatMoney(invoice.totalAmount)}</strong>
               </div>
             ))}
